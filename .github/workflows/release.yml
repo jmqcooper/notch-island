@@ -1,0 +1,26 @@
+# Builds the app and attaches NotchIsland.zip to a GitHub release when a v* tag is pushed.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use the newest Xcode
+        run: sudo xcode-select -s "$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)" && swift --version
+      - name: Build
+        run: ./scripts/build.sh --release
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" build/NotchIsland.zip \
+            --title "NotchIsland ${GITHUB_REF_NAME#v}" \
+            --notes "Install with \`curl -fsSL https://raw.githubusercontent.com/jmqcooper/notch-island/main/install.sh | bash\`, or download NotchIsland.zip below. See the README for the first-launch step."
